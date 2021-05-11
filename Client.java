@@ -31,7 +31,6 @@ public class Client extends JFrame implements MouseListener,ActionListener {
     private int myReqCount = 3,opReqCount = 3;
     private boolean isMyReady = false,isOpReady = false;
     private int lastSelect;
-    Socket socket = null;
 
 	// コンストラクタ
 	public Client(Othello game, Player player) { //OthelloオブジェクトとPlayerオブジェクトを引数とする
@@ -126,6 +125,7 @@ public class Client extends JFrame implements MouseListener,ActionListener {
 
 	// メソッド
 	public void connectServer(String ipAddress, int port){	// サーバに接続
+		Socket socket = null;
 		try {
 			socket = new Socket(ipAddress, port); //サーバ(ipAddress, port)に接続
 			out = new PrintWriter(socket.getOutputStream(), true); //データ送信用オブジェクトの用意
@@ -175,7 +175,7 @@ public class Client extends JFrame implements MouseListener,ActionListener {
 		private BufferedReader br; //文字ストリーム用のバッファ
 
 		// 内部クラスReceiverのコンストラクタ
-		Receiver (){
+		Receiver (Socket socket){
 			try{
 				sisr = new InputStreamReader(socket.getInputStream()); //受信したバイトデータを文字ストリームに
 				br = new BufferedReader(sisr);//文字ストリームをバッファリングする
