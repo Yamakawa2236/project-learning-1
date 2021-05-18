@@ -402,9 +402,10 @@ public class Client extends JFrame implements MouseListener,ActionListener {
 		}
 		Player player = new Player(); //プレイヤオブジェクトの用意(ログイン)
 		player.setName(myName); //名前を受付
+		String IP = JOptionPane.showInputDialog(null,"サーバのIPアドレスを入力してください","サーバのアドレスの入力",JOptionPane.QUESTION_MESSAGE);
 		Othello game = new Othello(); //オセロオブジェクトを用意
 		Client oclient = new Client(game, player); //引数としてオセロオブジェクトを渡す
-		oclient.connectServer("localhost", 10000);
+		oclient.connectServer(IP, 10000);
 	}
 
     @Override
