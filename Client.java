@@ -1,7 +1,5 @@
 //パッケージのインポート
 import javax.swing.*;
-import javax.swing.plaf.metal.MetalBorders.PaletteBorder;
-
 import java.awt.*;
 import java.awt.event.*;
 import java.net.*;
@@ -11,9 +9,12 @@ public class Client extends JFrame implements MouseListener,ActionListener {
 	private JButton buttonArray[][];//オセロ盤用のボタン配列
 	private JLabel colorLabel; // 色表示用ラベル
 	private JLabel turnLabel; // 手番表示用ラベル
-    private JLabel timerLabel;
-    private Timer timer;
-    private int sec;
+    private JLabel myTimerLabel;
+    private JLabel opTimerLabel;
+    private Timer myTimer;
+    private Timer opTimer;
+    private int mySec;
+    private int opSec;
     private CardLayout layout;
     private JPanel J;
 	private JPanel j1; // コンテナ
@@ -30,7 +31,8 @@ public class Client extends JFrame implements MouseListener,ActionListener {
     private JLabel request;
     private int myReqCount = 3,opReqCount = 3;
     private boolean isMyReady = false,isOpReady = false;
-    private int lastSelect;
+    private int myLastSelect;
+    private int opLastSelect;
 
 	// コンストラクタ
 	public Client(Othello game, Player player) { //OthelloオブジェクトとPlayerオブジェクトを引数とする
@@ -102,14 +104,18 @@ public class Client extends JFrame implements MouseListener,ActionListener {
 			    buttonArray[i][j].setActionCommand(Integer.toString(i*8+j));//ボタンを識別するための名前(番号)を付加する
             }
 		}
-		timerLabel = new JLabel("");
-        timerLabel.setBounds(0, 8*45+30,8 * 45 + 10,30);
-		j2.add(timerLabel);
-        timer = new Timer(1000,this);
+		myTimerLabel = new JLabel("");
+        myTimerLabel.setBounds(0, 8*45+30,8 * 45 + 10,30);
+		j2.add(myTimerLabel);
+        myTimer = new Timer(1000,myTimerListener);
+        opTimerLabel = new JLabel("");
+        opTimerLabel.setBounds(0, 8*45+60,8 * 45 + 10,30);
+        j2.add(opTimerLabel);
+        opTimer = new Timer(1000,opTimerListener);
 		//色表示用ラベル
 		String myName = player.getName();
 		colorLabel = new JLabel(myName + "さんの色は未定です");//色情報を表示するためのラベルを作成
-		colorLabel.setBounds(0, 8 * 45 + 60 , 8 * 45 + 10, 30);//境界を設定
+		colorLabel.setBounds(0, 8 * 45 + 90 , 8 * 45 + 10, 30);//境界を設定
 		j2.add(colorLabel);//色表示用ラベルをペインに貼り付け
 		//手番表示用ラベル
 		turnLabel = new JLabel("手番は未定です");//手番情報を表示するためのラベルを作成
@@ -125,7 +131,7 @@ public class Client extends JFrame implements MouseListener,ActionListener {
 
 	// メソッド
 	public void connectServer(String ipAddress, int port){	// サーバに接続
-		Socket socket = null;
+        Socket socket = null;
 		try {
 			socket = new Socket(ipAddress, port); //サーバ(ipAddress, port)に接続
 			out = new PrintWriter(socket.getOutputStream(), true); //データ送信用オブジェクトの用意
@@ -140,15 +146,26 @@ public class Client extends JFrame implements MouseListener,ActionListener {
 		}
 	}
 
-    public void actionPerformed(ActionEvent e) {
-        sec--;
-        timerLabel.setText("あなたの残り時間は" + sec + "秒です");
-        if(sec == 0) {
-            timer.stop();
-            JOptionPane.showMessageDialog(this,"持ち時間が0になりました。あなたは負けました","result",JOptionPane.PLAIN_MESSAGE);
+    public ActionListener myTimerListener = new ActionListener(){
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            mySec--;
+            myTimerLabel.setText("あなたの残り時間は" + mySec + "秒です");
+            if(mySec == 0) {
+            myTimer.stop();
+            JOptionPane.showMessageDialog(J,"持ち時間が0になりました。あなたは負けました","result",JOptionPane.PLAIN_MESSAGE);
             sendMessage("timeup");
         }
-    }
+        }
+    };
+
+    public ActionListener opTimerListener = new ActionListener(){
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            opSec--;
+            opTimerLabel.setText("相手の残り時間は" + opSec + "秒です");
+        }
+    };
 
 	public void sendMessage(String msg){	// サーバに操作情報を送信
 		out.println(msg);//送信データをバッファに書き出す
@@ -160,12 +177,16 @@ public class Client extends JFrame implements MouseListener,ActionListener {
         if(isMyReady && isOpReady) {
             layout.last(J);
             if(player.getColor().equals("black")) {
-                sec = lastSelect;
-                timer.start();
+                mySec = myLastSelect;
+                opSec = opLastSelect;
+                opTimerLabel.setText("相手の残り時間は" + opSec + "秒です");
+                myTimer.start();
             }else if(player.getColor().equals("white")) {
-                sec = lastSelect;
-                timerLabel.setText("あなたの残り時間は" + sec + "秒です");
-            }
+                mySec = myLastSelect;
+                opSec = opLastSelect;
+                myTimerLabel.setText("あなたの残り時間は" + mySec + "秒です");
+                opTimer.start();
+            } 
         }
     }
 
@@ -214,14 +235,17 @@ public class Client extends JFrame implements MouseListener,ActionListener {
             opTime.setText("相手が2分を選択しました。承認しますか?");
             yes.setEnabled(true);
             no.setEnabled(true);
+            opLastSelect = 120;
         }else if(msg.equals("five")) {
             opTime.setText("相手が5分を選択しました。承認しますか?");
             yes.setEnabled(true);
             no.setEnabled(true);
+            opLastSelect = 300;
         }else if(msg.equals("ten")) {
             opTime.setText("相手が10分を選択しました。承認しますか?");
             yes.setEnabled(true);
             no.setEnabled(true);
+            opLastSelect = 600;
         }else if(msg.equals("yes")) {
             isMyReady = true;
             two.setEnabled(false);
@@ -238,13 +262,15 @@ public class Client extends JFrame implements MouseListener,ActionListener {
                 ten.setEnabled(true);
             }
         }else if(msg.equals("pass")) {
+            opTimer.stop();
+            myTimer.start();
             JOptionPane.showMessageDialog(this,"相手がパスしました","info",JOptionPane.INFORMATION_MESSAGE);
             game.changeTurn();
             turnLabel.setText("あなたの番です");
-            timer.start();
         }else if(msg.equals("timeup")) {
             JOptionPane.showMessageDialog(this,"相手の持ち時間が0なりました。あなたは勝ちました","result",JOptionPane.PLAIN_MESSAGE);
         }else {
+            opTimer.stop();
             int x = Integer.parseInt(msg)%8;
             int y = Integer.parseInt(msg)/8;
             game.putStone(x,y,game.getTurn(),true);
@@ -252,6 +278,7 @@ public class Client extends JFrame implements MouseListener,ActionListener {
             String state = game.gameState(player.getColor());
             if(state.equals("pass")) {
                 sendMessage("pass");
+                opTimer.start();
                 JOptionPane.showMessageDialog(this,"置ける場所がないのでパスしました","info",JOptionPane.INFORMATION_MESSAGE);
             }else if(state.equals("end")) {
                 String winner = game.checkWinner();
@@ -263,9 +290,9 @@ public class Client extends JFrame implements MouseListener,ActionListener {
                     JOptionPane.showMessageDialog(this,"対局が終了しました。あなたは負けました","result",JOptionPane.PLAIN_MESSAGE);
                 }
             }else {
+                myTimer.start();
                 game.changeTurn();
                 turnLabel.setText("あなたの番です");
-                timer.start();
             }
         }
     }
@@ -283,7 +310,7 @@ public class Client extends JFrame implements MouseListener,ActionListener {
 	public void acceptOperation(String command){	// プレイヤの操作を受付
         if(command.equals("two")) {
             sendMessage(command);
-            lastSelect = 120;
+            myLastSelect = 120;
             timeLimit.setText("あなたは2分を選択しました");
             two.setEnabled(false);
             five.setEnabled(false);
@@ -292,14 +319,14 @@ public class Client extends JFrame implements MouseListener,ActionListener {
         }else if(command.equals("five")) {
             sendMessage(command);
             timeLimit.setText("あなたは5分を選択しました");
-            lastSelect = 300;
+            myLastSelect = 300;
             two.setEnabled(false);
             five.setEnabled(false);
             ten.setEnabled(false);
             request.setText("リクエスト残り回数" + --myReqCount + "回");
         }else if(command.equals("ten")) {
             sendMessage(command);
-            lastSelect = 600;
+            myLastSelect = 600;
             timeLimit.setText("あなたは10分を選択しました");
             two.setEnabled(false);
             five.setEnabled(false);
@@ -327,12 +354,14 @@ public class Client extends JFrame implements MouseListener,ActionListener {
             int x = Integer.parseInt(command)%8;
             int y = Integer.parseInt(command)/8;
             if(game.putStone(x,y,player.getColor(),true)) {
-                timer.stop();
+                myTimer.stop();
                 sendMessage(command);
+                opTimer.start();
                 updateDisp();
                 game.changeTurn();
                 turnLabel.setText("相手の番です");
                 if(game.gameState(player.getColor()).equals("end")) {
+                    opTimer.stop();
                     String winner = game.checkWinner();
                     if(winner.equals(player.getColor())) {
                         JOptionPane.showMessageDialog(this,"対局が終了しました。あなたは勝ちました","result",JOptionPane.PLAIN_MESSAGE);
@@ -377,4 +406,10 @@ public class Client extends JFrame implements MouseListener,ActionListener {
 		Client oclient = new Client(game, player); //引数としてオセロオブジェクトを渡す
 		oclient.connectServer("localhost", 10000);
 	}
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        // TODO Auto-generated method stub
+        
+    }
 }
