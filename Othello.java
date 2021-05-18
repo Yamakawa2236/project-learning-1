@@ -1,6 +1,7 @@
 public class Othello {
 	private String [][] grids = new String [8][8]; //局面情報
 	private String turn; //手番
+	private boolean isFinished = false;
 
 	// コンストラクタ
 	public Othello(){
@@ -18,23 +19,27 @@ public class Othello {
 
 	// メソッド
 	public String checkWinner(){	// 勝敗を判断
-		int countBlack = 0;
-		int countWhite = 0;
-		for(int i=0;i<8;i++) {
-			for(int j=0;j<8;j++) {
-				if(grids[i][j].equals("black")) {
-					countBlack++;
-				}else if(grids[i][j].equals("white")) {
-					countWhite++;
+		if(!isFinished) {
+			return "not_finished";
+		}else {
+			int countBlack = 0;
+			int countWhite = 0;
+			for(int i=0;i<8;i++) {
+				for(int j=0;j<8;j++) {
+					if(grids[i][j].equals("black")) {
+						countBlack++;
+					}else if(grids[i][j].equals("white")) {
+						countWhite++;
+					}
 				}
 			}
-		}
-		if(countBlack > countWhite) {
-			return "black";
-		}else if(countBlack < countWhite) {
-			return "white";
-		}else {
-			return "even";
+			if(countBlack > countWhite) {
+				return "black";
+			}else if(countBlack < countWhite) {
+				return "white";
+			}else {
+				return "even";
+			}
 		}
 	}
 
@@ -66,7 +71,7 @@ public class Othello {
 			for(int j=0;j<8;j++) {
 				if(grids[i][j].equals("board")) {
 					if(putStone(j, i,color,false)) {
-						return "go";
+						return "continue";
 					}
 				}
 			}
@@ -80,6 +85,7 @@ public class Othello {
 				}
 			}
 		}
+		isFinished = true;
 		return "end";
 	}
 
