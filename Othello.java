@@ -17,22 +17,34 @@ public class Othello {
 		grids[4][4] = "black";
 	}
 
+	public int stoneCount(String color) {
+		int count = 0;
+		if(color.equals("black")) {
+			for(int i=0;i<8;i++) {
+				for(int j=0;j<8;j++) {
+					if(grids[i][j].equals("black")) {
+						count++;
+					}
+				}
+			}
+		}else {
+			for(int i=0;i<8;i++) {
+				for(int j=0;j<8;j++) {
+					if(grids[i][j].equals("white")) {
+						count++;
+					}
+				}
+			}
+		}
+		return count;
+	}
 	// メソッド
 	public String checkWinner(){	// 勝敗を判断
 		if(!isFinished) {
 			return "not_finished";
 		}else {
-			int countBlack = 0;
-			int countWhite = 0;
-			for(int i=0;i<8;i++) {
-				for(int j=0;j<8;j++) {
-					if(grids[i][j].equals("black")) {
-						countBlack++;
-					}else if(grids[i][j].equals("white")) {
-						countWhite++;
-					}
-				}
-			}
+			int countBlack = stoneCount("black");
+			int countWhite = stoneCount("white");
 			if(countBlack > countWhite) {
 				return "black";
 			}else if(countBlack < countWhite) {
@@ -87,6 +99,21 @@ public class Othello {
 		}
 		isFinished = true;
 		return "end";
+	}
+
+	public int[] canPut(String color) {
+		int [] red = new int[64];
+		int count=0;
+		for(int i=0;i<8;i++) {
+			for(int j=0;j<8;j++) {
+				if(putStone(j, i, color,false)) {
+					red[count] = i*8+j;
+					count++;
+				}
+			}
+		}
+		red[count] = 100;
+		return red;
 	}
 
 	public boolean turnLeftUp(int x,int y,String color,boolean effect_on) {
